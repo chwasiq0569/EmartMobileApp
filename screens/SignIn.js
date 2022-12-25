@@ -19,8 +19,8 @@ function SignIn({ navigation }) {
     const login = () => {
         console.log("SIGNIN")
         const details = {
-            Email: 'hammadullah786@gmail.com',
-            Password: 'hamdu123',
+            Email: 'chwasiq0569@gmail.com',
+            Password: 'wasiq123',
         }
         var formBody = [];
         for (var property in details) {

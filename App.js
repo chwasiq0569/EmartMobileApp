@@ -4,6 +4,7 @@ import SignIn from './screens/SignIn';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Orders from './screens/Orders';
+import TabsViews from './screens/Tabs';
 
 export default function App() {
 
@@ -12,8 +13,9 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="SignIn" component={SignIn} />
+        <Stack.Screen name="SignIn" independent={true} component={TabsViews} />
         <Stack.Screen name="Orders" component={Orders} />
+        {/* <Stack.Screen name="TabsViews" component={TabsViews} /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );

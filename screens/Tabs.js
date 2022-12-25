@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { StatusBar } from "expo-status-bar";
 import {
     StyleSheet,
     Text,
@@ -11,19 +10,17 @@ import {
     Modal,
     Alert
 } from "react-native";
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-function Orders() {
-
-    const [orders, setOrders] = React.useState([]);
+function ActiveOrders({ orders, fetchOrders }) {
     const [modalVisible, setModalVisible] = useState(false);
     const [order_id, setOrder_Id] = useState(false);
 
-    React.useEffect(() => {
-        fetch("http://192.168.0.112/myapi/apis.php").then(res => res.json()).then(data => {
-            setOrders(data)
-        })
-    }, [])
 
+    React.useEffect(() => {
+        fetchOrders()
+    }, [modalVisible])
 
     function truncate(string, length) {
         if (string.length > length)
@@ -31,7 +28,6 @@ function Orders() {
         else
             return string;
     };
-
 
     const openMap = (long, lat, lab, order_id) => {
         setOrder_Id(order_id);
@@ -63,7 +59,7 @@ function Orders() {
         });
         setTimeout(() => {
             setModalVisible(true);
-        }, 1000)
+        }, 500)
     }
 
     const order_completed = () => {
@@ -94,6 +90,7 @@ function Orders() {
                 Alert.alert('Order Not Completed!')
             }
             setModalVisible(false);
+            fetchOrders();
         })
     }
 
@@ -139,6 +136,63 @@ function Orders() {
             </Modal>
 
         </ScrollView >
+    );
+}
+
+function CompletedOrders({ orders, fetchOrders }) {
+
+    React.useEffect(() => {
+        fetchOrders()
+    }, [])
+
+    function truncate(string, length) {
+        if (string.length > length)
+            return string.substring(0, length) + '...';
+        else
+            return string;
+    };
+
+    return (
+        <ScrollView style={styles.container}>
+            {
+                orders.map(item => (
+                    <TouchableOpacity key={item?.order_id}>
+                        <View style={styles.individualOrder}>
+                            <View style={styles.leftSide}>
+                                <Text style={styles.address}>Address: {String(truncate(item?.address, 27))}</Text>
+                                <Text style={styles.amount}>Amount: {String(item?.cart_amount)}</Text>
+                            </View>
+                            <Text style={styles.goText}>GO</Text>
+                        </View>
+                    </TouchableOpacity>
+                ))
+            }
+        </ScrollView >
+    );
+}
+
+const Tab = createBottomTabNavigator();
+
+export default function TabsViews() {
+
+    const [orders, setOrders] = React.useState([]);
+
+
+    const fetchOrders = () => {
+        fetch("http://192.168.0.112/myapi/apis.php").then(res => res.json()).then(data => {
+            setOrders(data)
+        })
+    }
+
+    React.useEffect(() => {
+        fetchOrders();
+    }, [])
+
+    return (
+        <Tab.Navigator>
+            <Tab.Screen name="ActiveOrders" children={(props) => <ActiveOrders {...props} fetchOrders={fetchOrders} orders={orders.filter(order => order.Order_Completed == 0)} />} />
+            <Tab.Screen name="CompletedOrders" children={(props) => <CompletedOrders {...props} fetchOrders={fetchOrders} orders={orders.filter(order => order.Order_Completed == 1)} />} />
+        </Tab.Navigator>
     );
 }
 
@@ -189,6 +243,3 @@ const styles = StyleSheet.create({
         marginTop: 8
     }
 });
-
-
-export default Orders;

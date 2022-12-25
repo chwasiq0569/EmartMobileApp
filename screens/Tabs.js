@@ -21,6 +21,7 @@ function ActiveOrders({ orders, fetchOrders }) {
     React.useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true)
         return () => backHandler.remove()
+        fetchOrders()
     }, [])
 
     React.useEffect(() => {
@@ -64,10 +65,10 @@ function ActiveOrders({ orders, fetchOrders }) {
         });
         setTimeout(() => {
             setModalVisible(true);
-        }, 500)
+        }, 10)
     }
 
-    const order_completed = () => {
+    const order_status_update = (status) => {
         console.log("order_completed")
         const details = {
             order_id: order_id,
@@ -79,7 +80,8 @@ function ActiveOrders({ orders, fetchOrders }) {
             formBody.push(encodedKey + "=" + encodedValue);
         }
         formBody = formBody.join("&");
-        fetch('http://192.168.0.112/myapi/order_completed.php', {
+        console.log('http://192.168.0.112/myapi/order_completed.php?status=' + status)
+        fetch('http://192.168.0.112/myapi/order_completed.php?status=' + status, {
             method: 'POST',
             body: formBody,
             headers: {
@@ -103,11 +105,15 @@ function ActiveOrders({ orders, fetchOrders }) {
         <ScrollView style={styles.container}>
             {orders.length > 0 ?
                 orders.map(item => (
-                    <TouchableOpacity key={item?.order_id} onPress={() => openMap(item?.cust_longt, item?.cust_latit, item?.address, item?.order_id)}>
+                    <TouchableOpacity key={item?.order_id} onPress={() => {
+                        order_status_update(2);
+                        openMap(item?.cust_longt, item?.cust_latit, item?.address, item?.order_id)
+                    }}>
                         <View style={styles.individualOrder}>
                             <View style={styles.leftSide}>
                                 <Text style={styles.address}>Address: {String(truncate(item?.address, 27))}</Text>
                                 <Text style={styles.amount}>Amount: {String(item?.cart_amount)}</Text>
+                                {item.Order_Completed == "2" && <Text style={styles.amount}>In Progress</Text>}
                             </View>
                             <Text style={styles.goText}>GO</Text>
                         </View>
@@ -127,7 +133,7 @@ function ActiveOrders({ orders, fetchOrders }) {
                 <View style={styles.modalStyles}>
                     <Text style={styles.modalTextStyles}>Order Status?</Text>
                     <View style={styles.btnStyles}>
-                        <Button onPress={order_completed} style={styles.btnStyles}
+                        <Button onPress={() => order_status_update(1)} style={styles.btnStyles}
                             title="Order Completed"
                             color="#841584"
                         /></View>
@@ -166,6 +172,7 @@ function CompletedOrders({ orders, fetchOrders }) {
                             <View style={styles.leftSide}>
                                 <Text style={styles.address}>Address: {String(truncate(item?.address, 27))}</Text>
                                 <Text style={styles.amount}>Amount: {String(item?.cart_amount)}</Text>
+
                             </View>
                             <Text style={styles.goText}>GO</Text>
                         </View>
@@ -193,7 +200,7 @@ export default function TabsViews() {
 
     return (
         <Tab.Navigator>
-            <Tab.Screen name="ActiveOrders" children={(props) => <ActiveOrders {...props} fetchOrders={fetchOrders} orders={orders.filter(order => order.Order_Completed == 0)} />} />
+            <Tab.Screen name="ActiveOrders" children={(props) => <ActiveOrders {...props} fetchOrders={fetchOrders} orders={orders.filter(order => order.Order_Completed == 0 || order.Order_Completed == 2)} />} />
             <Tab.Screen name="CompletedOrders" children={(props) => <CompletedOrders {...props} fetchOrders={fetchOrders} orders={orders.filter(order => order.Order_Completed == 1)} />} />
         </Tab.Navigator>
     );

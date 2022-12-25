@@ -12,9 +12,11 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="SignIn" independent={true} component={TabsViews} />
-        <Stack.Screen name="Orders" component={Orders} />
+      <Stack.Navigator screenOptions={{
+        headerShown: false
+      }}>
+        <Stack.Screen name="SignIn" independent={true} component={SignIn} />
+        <Stack.Screen name="Orders" component={TabsViews} />
         {/* <Stack.Screen name="TabsViews" component={TabsViews} /> */}
       </Stack.Navigator>
     </NavigationContainer>

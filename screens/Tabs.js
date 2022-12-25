@@ -8,7 +8,8 @@ import {
     Button,
     TouchableOpacity, ScrollView, Linking,
     Modal,
-    Alert
+    Alert,
+    BackHandler
 } from "react-native";
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -17,6 +18,10 @@ function ActiveOrders({ orders, fetchOrders }) {
     const [modalVisible, setModalVisible] = useState(false);
     const [order_id, setOrder_Id] = useState(false);
 
+    React.useEffect(() => {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true)
+        return () => backHandler.remove()
+    }, [])
 
     React.useEffect(() => {
         fetchOrders()
@@ -96,7 +101,7 @@ function ActiveOrders({ orders, fetchOrders }) {
 
     return (
         <ScrollView style={styles.container}>
-            {
+            {orders.length > 0 ?
                 orders.map(item => (
                     <TouchableOpacity key={item?.order_id} onPress={() => openMap(item?.cust_longt, item?.cust_latit, item?.address, item?.order_id)}>
                         <View style={styles.individualOrder}>
@@ -107,7 +112,7 @@ function ActiveOrders({ orders, fetchOrders }) {
                             <Text style={styles.goText}>GO</Text>
                         </View>
                     </TouchableOpacity>
-                ))
+                )) : <Text style={styles.noOrdersStyles}>No Orders</Text>
             }
             <Modal
                 animationType="slide"
@@ -154,7 +159,7 @@ function CompletedOrders({ orders, fetchOrders }) {
 
     return (
         <ScrollView style={styles.container}>
-            {
+            {orders.length > 0 ?
                 orders.map(item => (
                     <TouchableOpacity key={item?.order_id}>
                         <View style={styles.individualOrder}>
@@ -165,7 +170,7 @@ function CompletedOrders({ orders, fetchOrders }) {
                             <Text style={styles.goText}>GO</Text>
                         </View>
                     </TouchableOpacity>
-                ))
+                )) : <Text style={styles.noOrdersStyles}>No Orders</Text>
             }
         </ScrollView >
     );
@@ -174,9 +179,7 @@ function CompletedOrders({ orders, fetchOrders }) {
 const Tab = createBottomTabNavigator();
 
 export default function TabsViews() {
-
     const [orders, setOrders] = React.useState([]);
-
 
     const fetchOrders = () => {
         fetch("http://192.168.0.112/myapi/apis.php").then(res => res.json()).then(data => {
@@ -200,11 +203,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
-        // alignItems: "center",
-        // justifyContent: "center",
         backgroundColor: "#E7E9EB",
-        // paddingTop: 200,
-        // overflowY: "scroll"
     },
     individualOrder: {
         flexDirection: "row",
@@ -216,7 +215,6 @@ const styles = StyleSheet.create({
         borderColor: "#ffffff",
         backgroundColor: "#ffffff",
         padding: 8,
-        // marginY: 10,
         marginVertical: 10
     },
     address: {
@@ -241,5 +239,11 @@ const styles = StyleSheet.create({
     },
     btnStyles: {
         marginTop: 8
+    },
+    noOrdersStyles: {
+        textAlign: 'center',
+        fontSize: 24,
+        marginTop: 8,
+        fontWeight: "800",
     }
 });

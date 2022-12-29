@@ -10,10 +10,20 @@ import {
     TouchableOpacity,
     Alert,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function SignIn({ navigation }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    const storeData = async (value) => {
+        try {
+            await AsyncStorage.setItem('user', JSON.stringify(value))
+        } catch (e) {
+            Alert.alert(e)
+        }
+    }
+
     const login = () => {
         console.log("SIGNIN")
         const details = {
@@ -37,6 +47,7 @@ function SignIn({ navigation }) {
             console.log("data", data)
             if (data.status == true) {
                 navigation.navigate('Orders');
+                storeData(data?.data)
             }
             else {
                 Alert.alert('Username or Password is not correct!')

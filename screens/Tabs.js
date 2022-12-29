@@ -13,15 +13,32 @@ import {
 } from "react-native";
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function ActiveOrders({ orders, fetchOrders }) {
     const [modalVisible, setModalVisible] = useState(false);
     const [order_id, setOrder_Id] = useState(false);
+    const [order, setOrder] = useState(false);
+    const [rider, setRider] = useState(null);
 
+    const _retrieveData = async () => {
+        try {
+            const value = await AsyncStorage.getItem('user');
+            if (value !== null) {
+                console.log('VAL', JSON.parse(value));
+                setRider(JSON.parse(value)?.ID);
+            }
+        } catch (error) {
+            Alert.alert("Something went wrong!")
+        }
+    };
+
+    console.log("rider", rider)
     React.useEffect(() => {
+        _retrieveData()
+        fetchOrders()
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true)
         return () => backHandler.remove()
-        fetchOrders()
     }, [])
 
     React.useEffect(() => {
@@ -35,8 +52,7 @@ function ActiveOrders({ orders, fetchOrders }) {
             return string;
     };
 
-    const openMap = (long, lat, lab, order_id) => {
-        setOrder_Id(order_id);
+    const openMap = (long, lat, lab) => {
         console.log("long", long)
         console.log("lat", lat)
         console.log("lab", lab)
@@ -65,11 +81,21 @@ function ActiveOrders({ orders, fetchOrders }) {
         });
         setTimeout(() => {
             setModalVisible(true);
-        }, 10)
+        }, 1000)
     }
 
-    const order_status_update = (status) => {
-        console.log("order_completed")
+    React.useEffect(() => {
+        console.log("order_id|order_id", order_id)
+        console.log("order|order", order)
+    }, [order_id])
+
+    const order_status_update = (status, riderID, cust_longt, cust_latit, address, order_id) => {
+        console.log("status", status)
+        console.log("riderID", riderID)
+        console.log("cust_longt", cust_longt)
+        console.log("cust_latit", cust_latit)
+        console.log("address", address)
+        console.log("order_id", order_id)
         const details = {
             order_id: order_id,
         }
@@ -80,8 +106,8 @@ function ActiveOrders({ orders, fetchOrders }) {
             formBody.push(encodedKey + "=" + encodedValue);
         }
         formBody = formBody.join("&");
-        console.log('http://192.168.0.112/myapi/order_completed.php?status=' + status)
-        fetch('http://192.168.0.112/myapi/order_completed.php?status=' + status, {
+        console.log('http://192.168.0.112/myapi/order_completed.php?status=' + status + '&rider=' + riderID)
+        fetch('http://192.168.0.112/myapi/order_completed.php?status=' + status + '&rider=' + riderID, {
             method: 'POST',
             body: formBody,
             headers: {
@@ -90,14 +116,19 @@ function ActiveOrders({ orders, fetchOrders }) {
         }).then(res => res.json()).then(data => {
             console.log("data", data)
             if (data.status == true) {
-                // navigation.navigate('Orders');
-                Alert.alert('Order Completed!')
-            }
-            else {
-                Alert.alert('Order Not Completed!')
+
+                if (status == 2) {
+                    openMap(cust_longt, cust_latit, address, order_id)
+                }
+
+                if (data.order_status == "1") {
+                    Alert.alert('Order Completed!');
+                }
             }
             setModalVisible(false);
             fetchOrders();
+        }).catch(err => {
+            console.log("ERROR", err)
         })
     }
 
@@ -106,8 +137,10 @@ function ActiveOrders({ orders, fetchOrders }) {
             {orders.length > 0 ?
                 orders.map(item => (
                     <TouchableOpacity key={item?.order_id} onPress={() => {
-                        order_status_update(2);
-                        openMap(item?.cust_longt, item?.cust_latit, item?.address, item?.order_id)
+                        setOrder(item);
+                        setOrder_Id(item?.order_id);
+                        order_status_update(2, rider, item?.cust_longt, item?.cust_latit, item?.address, item?.order_id);
+                        // openMap(item?.cust_longt, item?.cust_latit, item?.address, item?.order_id)
                     }}>
                         <View style={styles.individualOrder}>
                             <View style={styles.leftSide}>
@@ -133,7 +166,7 @@ function ActiveOrders({ orders, fetchOrders }) {
                 <View style={styles.modalStyles}>
                     <Text style={styles.modalTextStyles}>Order Status?</Text>
                     <View style={styles.btnStyles}>
-                        <Button onPress={() => order_status_update(1)} style={styles.btnStyles}
+                        <Button onPress={() => order_status_update(1, rider, order?.cust_longt, order?.cust_latit, order?.address, order_id)} style={styles.btnStyles}
                             title="Order Completed"
                             color="#841584"
                         /></View>
@@ -174,7 +207,7 @@ function CompletedOrders({ orders, fetchOrders }) {
                                 <Text style={styles.amount}>Amount: {String(item?.cart_amount)}</Text>
 
                             </View>
-                            <Text style={styles.goText}>GO</Text>
+                            {/* <Text style={styles.goText}>GO</Text> */}
                         </View>
                     </TouchableOpacity>
                 )) : <Text style={styles.noOrdersStyles}>No Orders</Text>
@@ -185,7 +218,9 @@ function CompletedOrders({ orders, fetchOrders }) {
 
 const Tab = createBottomTabNavigator();
 
-export default function TabsViews() {
+export default function TabsViews(props) {
+    console.log("route" + props.navigation);
+
     const [orders, setOrders] = React.useState([]);
 
     const fetchOrders = () => {
